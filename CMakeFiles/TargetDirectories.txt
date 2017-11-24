@@ -1,3 +1,0 @@
-/home/karim/Work/SIM/CMakeFiles/rebuild_cache.dir
-/home/karim/Work/SIM/CMakeFiles/edit_cache.dir
-/home/karim/Work/SIM/CMakeFiles/sim.dir

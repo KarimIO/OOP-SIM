@@ -17,7 +17,7 @@ public:
     void LoadFile(std::string path);
     void Run();
     void Reset();
-    // void RunSingle();
+    void RunSingle();
 public:
     void SetPC(address_t address);
     int GetData(address_t address);
