@@ -220,7 +220,8 @@ void HaltInstruction::Execute() {
 
 Instruction *ParseSimInstruction(System *system, std::string command) {
 	std::string type, params;
-	
+
+    // Seperate the instruction into the base and the parameters by finding the first space.
 	unsigned int p = command.find(' ');
 	if (p == -1) {
 		type = command;
@@ -233,6 +234,7 @@ Instruction *ParseSimInstruction(System *system, std::string command) {
 		params = command.substr(p+1);
 	}
 
+    // Factory to create Instructions based on the instruction name
 	Instruction *inst = nullptr;
 	if (type == "add") {
 		inst = new AddInstruction(system, params);
