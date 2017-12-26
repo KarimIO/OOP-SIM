@@ -3,83 +3,88 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <thread>
 
-System::System(std::string path, Instruction *(*ParseInstruction)(System *, std::string)) : instructions_{0}, data_{0}, program_counter_(0), running_(false), ParseInstruction_(ParseInstruction) {
-	LoadFile(path);
+std::string getExtension(std::string &str) {
+	std::size_t found = str.find_last_of(".");
+	return str.substr(found + 1);
+}
+
+System::System(std::string path, Instruction *(*ParseInstruction)(Subsystem *, std::string)) : data_{0}, ParseInstruction_(ParseInstruction) {
+	std::string ext = getExtension(path);
+	if (ext == "s") {
+		subsystems_.push_back(new Subsystem(this, path, ParseInstruction));
+	}
+	else if (ext == "txt") {
+		LoadFile(path);
+	}
+	else {
+		throw std::runtime_error("Invalid input type! Please input either a .txt or .s file.");
+	}
 }
 
 System::~System() {
-	// Delete any instructions
-	for (Instruction *i : instructions_) {
-		if (i != nullptr) {
-			delete i;
-		}
+	for (auto &s : subsystems_) {
+		delete s;
 	}
 }
 
 void System::LoadFile(std::string path) {
-	// Load File
 	std::ifstream file(path);
 	if (file.fail()) {
 		throw std::runtime_error("Failed to load file " + path);
 	}
 
-	// For each line, parse the instruction
-	std::string instruction;
-	address_t i = 0;
-	while(std::getline(file, instruction)) {
-		if (i > kInstructionSize) {
-			throw std::runtime_error("System::LoadFile: Too many instructions in code. Please insert up to " + std::to_string(kInstructionSize) + " instructions.");
+	std::string dir = "";
+	std::size_t found = path.find_last_of("\//");
+	if (found == std::string::npos) {
+		std::size_t found = path.find_last_of("\\");
+		if (found != std::string::npos) {
+			dir = path.substr(0, found + 1);
 		}
-		instructions_[i++] = ParseInstruction_(this, instruction);
+	}
+	else {
+		dir = path.substr(0, found + 1);
+	}
+	std::string line;
+	while (std::getline(file, line)) {
+		subsystems_.push_back(new Subsystem(this, dir + line, ParseInstruction_));
 	}
 }
 
 void System::Run() {
-	running_ = true;
-	while (running_) {
-		if (program_counter_ > kInstructionSize) {
-			throw std::runtime_error("System::Run: Attempt to access invalid instruction! PC must be between 0 and " + std::to_string(kInstructionSize));
-		}
-		if (instructions_[program_counter_] == nullptr) {
-			throw std::runtime_error("System::Run: Attempt to access invalid instruction! Instruction has not been initialized.");
-		}
-		instructions_[program_counter_++]->Execute();
+	std::thread *threads = new std::thread[subsystems_.size()];
+	for (int i = 0; i < subsystems_.size(); i++) {
+		threads[i] = std::thread(&Subsystem::Run, subsystems_[i]);
+	}
+
+	for (int i = 0; i < subsystems_.size(); i++) {
+		threads[i].join();
 	}
 }
 
 void System::Reset() {
 	// Reset PC and delete all instructions and data
-	program_counter_ = 0;
-	std::memset(instructions_, 0, sizeof(instructions_));
+	for (auto &s : subsystems_) {
+		s->Reset();
+	}
 	std::memset(data_, 0, sizeof(data_));
 }
 
 void System::RunSingle() {
-	if (program_counter_ > kInstructionSize) {
-		throw std::runtime_error("System::Run: Attempt to access invalid instruction! PC must be between 0 and " + std::to_string(kInstructionSize));
+	for (auto &s : subsystems_) {
+		s->RunSingle();
 	}
-	if (instructions_[program_counter_] == nullptr) {
-		throw std::runtime_error("System::Run: Attempt to access invalid instruction! Instruction has not been initialized.");
-	}
-	instructions_[program_counter_++]->Execute();
 }
 
-void System::SetPC(unsigned short address) {
-	if (address > kInstructionSize)
-		throw std::runtime_error("System::SetPC: Invalid Instruction Address Location accessed.");
-
-	program_counter_ = address;
-}
-
-void System::SetData(unsigned short address, int value) {
+void System::SetData(address_t address, int value) {
 	if (address > kDataSize)
 		throw std::runtime_error("System::SetData: Invalid Data Address Location accessed.");
 
 	data_[address] = value;
 }
 
-int  System::GetData(unsigned short address) {
+int  System::GetData(address_t address) {
 	if (address > kDataSize)
 		throw std::runtime_error("System::SetData: Invalid Data Address Location accessed.");
 
@@ -87,5 +92,7 @@ int  System::GetData(unsigned short address) {
 }
 
 void System::HaltRun() {
-	running_ = false;
+	for (auto &s : subsystems_) {
+		s->HaltRun();
+	}
 }

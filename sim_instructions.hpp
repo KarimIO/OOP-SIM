@@ -4,14 +4,14 @@
 #include "instruction.hpp"
 #include <string>
 
-class System;
+class Subsystem;
 
 class AddInstruction : public Instruction {
 public:
-    AddInstruction(System *system, std::string);
+    AddInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t out_address_;
 
@@ -24,10 +24,10 @@ private:
 
 class NegInstruction : public Instruction {
 public:
-    NegInstruction(System *system, std::string);
+    NegInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t out_address_;
 
@@ -37,10 +37,10 @@ private:
 
 class MultInstruction : public Instruction {
 public:
-    MultInstruction(System *system, std::string);
+    MultInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t out_address_;
 
@@ -53,10 +53,10 @@ private:
 
 class Jmp0Instruction : public Instruction {
 public:
-    Jmp0Instruction(System *system, std::string);
+    Jmp0Instruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t jump_address_;
 
@@ -66,20 +66,20 @@ private:
 
 class JmpInstruction : public Instruction {
 public:
-    JmpInstruction(System *system, std::string);
+    JmpInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t jump_address_;
 };
 
 class AssInstruction : public Instruction {
 public:
-    AssInstruction(System *system, std::string);
+    AssInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t out_address_;
 
@@ -89,10 +89,10 @@ private:
 
 class LeInstruction : public Instruction {
 public:
-    LeInstruction(System *system, std::string);
+    LeInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
     
     address_t out_address_;
 
@@ -105,20 +105,20 @@ private:
 
 class ReadInstruction : public Instruction {
 public:
-    ReadInstruction(System *system, std::string);
+    ReadInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
 
     address_t address_;
 };
 
 class WriteInstruction : public Instruction {
 public:
-    WriteInstruction(System *system, std::string);
+    WriteInstruction(Subsystem *system, std::string);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
 
     bool is_address_;
     address_t address_;
@@ -142,12 +142,20 @@ private:
 
 class HaltInstruction : public Instruction {
 public:
-    HaltInstruction(System *system);
+    HaltInstruction(Subsystem *system);
     virtual void Execute();
 private:
-    System *system_;
+    Subsystem *system_;
 };
 
-Instruction *ParseSimInstruction(System *system, std::string instruction);
+class SleepInstruction : public Instruction {
+public:
+	SleepInstruction(std::string param);
+	virtual void Execute();
+private:
+	long long time_;
+};
+
+Instruction *ParseSimInstruction(Subsystem *system, std::string instruction);
 
 #endif

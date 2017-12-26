@@ -1,7 +1,7 @@
 #include "utils.hpp"
 #include <cstring>
 
-int getValue(System *system, bool is_address, int value) {
+int getValue(Subsystem *system, bool is_address, int value) {
     return is_address ? system->GetData((address_t)value) : value;
 }
 

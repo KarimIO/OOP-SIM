@@ -1,11 +1,13 @@
 #include "sim_instructions.hpp"
 #include "system.hpp"
 #include "utils.hpp"
+#include <thread>
+#include <chrono>
 #include <iostream>
 
 //#define DEBUG_INSTRUCTIONS
 
-AddInstruction::AddInstruction(System *system, std::string params) : system_(system) {
+AddInstruction::AddInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: ADD " << params << std::endl;
 #endif
@@ -22,12 +24,12 @@ void AddInstruction::Execute() {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Execute Instruction: ADD " << (in1_is_address_?"x":"") << in1_address_ << ", " << (in2_is_address_?"x":"") << in2_address_ << ", x" << out_address_ << std::endl;
 #endif
-    int val1 = getValue(system_, in1_is_address_, in1_address_);
+	int val1 = getValue(system_, in1_is_address_, in1_address_);
     int val2 = getValue(system_, in2_is_address_, in2_address_);
     system_->SetData(out_address_, val1 + val2);
 }
 
-NegInstruction::NegInstruction(System *system, std::string params) : system_(system) {
+NegInstruction::NegInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: NEG " << params << std::endl;
 #endif
@@ -46,7 +48,7 @@ void NegInstruction::Execute() {
     system_->SetData(out_address_, -val);
 }
 
-MultInstruction::MultInstruction(System *system, std::string params) : system_(system) {
+MultInstruction::MultInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: MULT " << params << std::endl;
 #endif
@@ -68,7 +70,7 @@ void MultInstruction::Execute() {
     system_->SetData(out_address_, val1 * val2);
 }
 
-JmpInstruction::JmpInstruction(System *system, std::string params) : system_(system) {
+JmpInstruction::JmpInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: JMP " << params << std::endl;
 #endif
@@ -84,7 +86,7 @@ void JmpInstruction::Execute() {
     system_->SetPC(jump_address_);
 }
 
-Jmp0Instruction::Jmp0Instruction(System *system, std::string params) : system_(system) {
+Jmp0Instruction::Jmp0Instruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: JMP0 " << params << std::endl;
 #endif
@@ -104,7 +106,7 @@ void Jmp0Instruction::Execute() {
 		system_->SetPC(jump_address_);
 }
 
-LeInstruction::LeInstruction(System *system, std::string params) : system_(system) {
+LeInstruction::LeInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: LE " << params << std::endl;
 #endif
@@ -126,7 +128,7 @@ void LeInstruction::Execute() {
     system_->SetData(out_address_, (val1 < val2) ? 1 : 0);
 }
 
-AssInstruction::AssInstruction(System *system, std::string params) : system_(system) {
+AssInstruction::AssInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: NEG " << params << std::endl;
 #endif
@@ -145,7 +147,7 @@ void AssInstruction::Execute() {
     system_->SetData(out_address_, val);
 }
 
-ReadInstruction::ReadInstruction(System *system, std::string params) : system_(system) {
+ReadInstruction::ReadInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: READ " << params << std::endl;
 #endif
@@ -163,7 +165,7 @@ void ReadInstruction::Execute() {
 	system_->SetData(address_, val);
 }
 
-WriteInstruction::WriteInstruction(System *system, std::string params) : system_(system) {
+WriteInstruction::WriteInstruction(Subsystem *system, std::string params) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: WRITE " << params << std::endl;
 #endif
@@ -205,7 +207,7 @@ void PrintLnInstruction::Execute() {
 	std::cout << param_ << std::endl;
 }
 
-HaltInstruction::HaltInstruction(System *system) : system_(system) {
+HaltInstruction::HaltInstruction(Subsystem *system) : system_(system) {
 #ifdef DEBUG_INSTRUCTIONS
     std::cout << "Create Instruction: HALT" << std::endl;
 #endif
@@ -218,11 +220,20 @@ void HaltInstruction::Execute() {
     system_->HaltRun();
 }
 
-Instruction *ParseSimInstruction(System *system, std::string command) {
+SleepInstruction::SleepInstruction(std::string param) {
+	time_ = std::stoll(param);
+}
+
+void SleepInstruction::Execute() {
+	std::this_thread::sleep_for(std::chrono::milliseconds(time_));
+}
+
+
+Instruction *ParseSimInstruction(Subsystem *system, std::string command) {
 	std::string type, params;
 
     // Seperate the instruction into the base and the parameters by finding the first space.
-	unsigned int p = command.find(' ');
+	size_t p = command.find(' ');
 	if (p == -1) {
 		type = command;
 		toLower(type);
@@ -272,8 +283,11 @@ Instruction *ParseSimInstruction(System *system, std::string command) {
 	else if (type == "halt") {
 		inst = new HaltInstruction(system);
 	}
+	else if (type == "sleep") {
+		inst = new SleepInstruction(params);
+	}
 	else {
-		throw std::runtime_error("System::ParseInstruction: Invalid Instruction in File: " + type);
+		throw std::runtime_error("Subsystem::ParseInstruction: Invalid Instruction in File: " + type);
 	}
 
 	return inst;

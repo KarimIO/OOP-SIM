@@ -3,3 +3,8 @@ CMakeFiles/
 CMakeCache.txt
 .vscode/
 sim
+*.vcxproj*
+*.sln
+x64/
+sim.dir/
+Debug/

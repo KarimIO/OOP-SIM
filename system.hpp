@@ -3,15 +3,15 @@
 
 #include "instruction.hpp"
 #include "sim_instructions.hpp"
+#include"subsystem.hpp"
 #include <string>
+#include <vector>
 
-const address_t kInstructionSize = 1024u;
 const address_t kDataSize = 1024u;
 
 class System {
-    friend class Instruction;
 public:
-    System(std::string path, Instruction *(*ParseInstruction)(System *, std::string));
+    System(std::string path, Instruction *(*ParseInstruction)(Subsystem *, std::string));
     ~System();
 
     void LoadFile(std::string path);
@@ -19,18 +19,13 @@ public:
     void Reset();
     void RunSingle();
 public:
-    void SetPC(address_t address);
     int GetData(address_t address);
     void SetData(address_t address, int value);
     void HaltRun();
 private:
-    Instruction *(*ParseInstruction_)(System *, std::string);
-
-    address_t program_counter_;
-    bool running_;
-
-    Instruction *instructions_[kInstructionSize];
-    int data_[kDataSize];
+    Instruction *(*ParseInstruction_)(Subsystem *, std::string);
+	std::vector<Subsystem *> subsystems_;
+	int data_[kDataSize];
 };
 
 #endif

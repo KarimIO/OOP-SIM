@@ -1,9 +1,9 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include "system.hpp"
+#include "subsystem.hpp"
 
-int getValue(System *system, bool is_address, int value);
+int getValue(Subsystem *system, bool is_address, int value);
 void ParseVariable(char *str, bool &is_address, address_t &address);
 void ParseAddress(char *str, address_t &address);
 void GetFirstToken(char *&str);
